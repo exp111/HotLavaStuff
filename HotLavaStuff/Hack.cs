@@ -30,10 +30,12 @@ namespace HotLavaStuff
 
 		//Options
 		public static bool _freeRunTokenESP = false;
+		public static bool _collectiblesESP = false;
 
 		bool init = false;
 
 		public static List<FreeRunToken> _tokens = new List<FreeRunToken>();
+		public static List<CollectibleForLevel> _collectibles = new List<CollectibleForLevel>();
 
 		void Start()
 		{
@@ -100,9 +102,9 @@ namespace HotLavaStuff
 			{
 				foreach (var token in _tokens)
 				{
-					if (token == null || token.gameObject == null || !token.gameObject.activeSelf || !token.gameObject.activeInHierarchy)
+					if (token == null || token.gameObject == null) //|| !token.gameObject.activeSelf || !token.gameObject.activeInHierarchy)
 					{
-						_tokens.Remove(token);
+						//_tokens.Remove(token);
 						continue;
 					}
 					Vector3 pos = Camera.main.WorldToScreenPoint(token.transform.position);
@@ -114,6 +116,25 @@ namespace HotLavaStuff
 					}
 				}
 			}
+
+			if (_collectiblesESP)
+			{
+				foreach (var collectible in _collectibles)
+				{
+					if (collectible == null || collectible.gameObject == null) //|| !collectible.gameObject.activeSelf || !collectible.gameObject.activeInHierarchy)
+					{
+						//_collectibles.Remove(token);
+						continue;
+					}
+					Vector3 pos = Camera.main.WorldToScreenPoint(collectible.transform.position);
+					pos.y = Screen.height - pos.y;
+
+					if (pos.z > 0f)
+					{
+						GUI.Label(new Rect(pos.x, pos.y, 50, 20), $"Collectible ({collectible.m_Unlockable.m_Description}): {Vector3.Distance(collectible.transform.position, Camera.main.transform.position).ToString()}");
+					}
+				}
+			}
 		}
 
 		void MenuFunction(int windowID)
@@ -122,7 +143,8 @@ namespace HotLavaStuff
 			GUI.DragWindow(new Rect(0, 0, _menuRect.width, 20));
 
 			_freeRunTokenESP = GUI.Toggle(new Rect(10, 20, 200, 20), _freeRunTokenESP, "Card ESP");
-			_teleportMenuVisible = GUI.Toggle(new Rect(10, 40, 100, 20), _teleportMenuVisible, "Show Item Menu");
+			_collectiblesESP = GUI.Toggle(new Rect(10, 40, 200, 20), _collectiblesESP, "Collectible ESP");
+			_teleportMenuVisible = GUI.Toggle(new Rect(10, 60, 200, 20), _teleportMenuVisible, "Teleport Menu");
 
 			//Unload
 			if (GUI.Button(new Rect(10, _menuRect.height - 25, _menuRect.width - 20, 20), "Unload"))
@@ -153,7 +175,6 @@ namespace HotLavaStuff
 namespace HotLavaStuff.HarmonyPatches
 {
 	#region HarmonyPatches
-	//TODO: golden pin esp //CollectibleForLevel //CollectibleForGameMode
 	[HarmonyPatch(typeof(FreeRunToken), "OnEnable")]
 	public static class FreeRunTokenESP
 	{
@@ -163,6 +184,18 @@ namespace HotLavaStuff.HarmonyPatches
 				return;
 
 			Hack._tokens.Add(__instance);
+		}
+	}
+
+	[HarmonyPatch(typeof(CollectibleForLevel), "OnEnable")]
+	public static class CollectibleESP
+	{
+		static void Postfix(CollectibleForLevel __instance)
+		{
+			if (__instance == null)
+				return;
+
+			Hack._collectibles.Add(__instance);
 		}
 	}
 	#endregion
