@@ -1,8 +1,10 @@
 ﻿using Harmony;
+using Klei.HotLava;
 using Klei.HotLava.Cameras;
 using Klei.HotLava.Game;
 using Klei.HotLava.Gameplay;
 using Klei.HotLava.Online;
+using Klei.HotLava.UI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,13 +36,16 @@ namespace HotLavaStuff
 
 		bool init = false;
 
-		public static List<FreeRunToken> _tokens = new List<FreeRunToken>();
-		public static List<CollectibleForLevel> _collectibles = new List<CollectibleForLevel>();
+		public static List<FreeRunToken> _tokens;
+		public static List<CollectibleForLevel> _collectibles;
 
 		void Start()
 		{
 			FileLog.Reset();
 			FileLog.Log("Init Start\n");
+
+			_tokens = new List<FreeRunToken>();
+			_collectibles = new List<CollectibleForLevel>();
 
 			try
 			{
@@ -66,7 +71,13 @@ namespace HotLavaStuff
 
 		void Update()
 		{
+			if (Input.GetKeyDown(KeyCode.F3))
+			{
+				State.LocalPlayer.movementSettings.CurrentTargetSpeed += 1f;
+			}
 			//Console.WriteLine("Update");
+			try
+			{ 
 			if (!init)
 			{
 				Start();
@@ -81,15 +92,23 @@ namespace HotLavaStuff
 			{
 				State.LocalPlayer.RigidBody.AddForce(Camera.main.transform.forward * 5);
 			}
+
 			//TODO: this.m_PlayerController.movementSettings.ForwardSpeed
 			if (Input.GetKeyDown(KeyCode.F2))
 			{
 				Checkpoint.CommandSaveCheckpoint(State.LocalPlayer.transform.position, State.LocalPlayer.transform.rotation);
 			}
+			}
+			catch (Exception e)
+			{
+				FileLog.Log($"Failed because: {e}");
+			}
 		}
 
 		void OnGUI()
 		{
+			if (State.LocalPlayer != null && State.LocalPlayer.movementSettings != null)
+				GUI.Label(new Rect(200, 200, 200, 200), State.LocalPlayer.movementSettings.CurrentTargetSpeed.ToString());
 			if (_menuVisible)
 			{
 				_menuRect = GUI.Window(1337, _menuRect, MenuFunction, "Unity is shit");
@@ -98,8 +117,11 @@ namespace HotLavaStuff
 					_teleportMenuRect = GUI.Window(1338, _teleportMenuRect, TeleportMenuFunction, "Teleport");
 			}
 
+			
 			if (_freeRunTokenESP)
 			{
+				GUI.Label(new Rect(100, 100, 100, 100), _tokens.Count.ToString());
+
 				foreach (var token in _tokens)
 				{
 					if (token == null || token.gameObject == null) //|| !token.gameObject.activeSelf || !token.gameObject.activeInHierarchy)
@@ -117,8 +139,10 @@ namespace HotLavaStuff
 				}
 			}
 
+
 			if (_collectiblesESP)
 			{
+				GUI.Label(new Rect(100, 150, 100, 100), _collectibles.Count.ToString());
 				foreach (var collectible in _collectibles)
 				{
 					if (collectible == null || collectible.gameObject == null) //|| !collectible.gameObject.activeSelf || !collectible.gameObject.activeInHierarchy)
@@ -135,6 +159,8 @@ namespace HotLavaStuff
 					}
 				}
 			}
+
+
 		}
 
 		void MenuFunction(int windowID)
@@ -145,6 +171,12 @@ namespace HotLavaStuff
 			_freeRunTokenESP = GUI.Toggle(new Rect(10, 20, 200, 20), _freeRunTokenESP, "Card ESP");
 			_collectiblesESP = GUI.Toggle(new Rect(10, 40, 200, 20), _collectiblesESP, "Collectible ESP");
 			_teleportMenuVisible = GUI.Toggle(new Rect(10, 60, 200, 20), _teleportMenuVisible, "Teleport Menu");
+			
+			
+			if (GUI.Button(new Rect(10, 80, _menuRect.width - 20, 20), "Get Daily Gift"))
+			{
+				Singleton<LevelSingleton>.Instance.m_CharacterCanvas.m_LevelCompleteMenu.m_AwardsScreen.QueueDailyGiftCheck();
+			}
 
 			//Unload
 			if (GUI.Button(new Rect(10, _menuRect.height - 25, _menuRect.width - 20, 20), "Unload"))
