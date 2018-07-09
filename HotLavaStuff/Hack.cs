@@ -1,5 +1,4 @@
-﻿using Harmony;
-using Klei.HotLava;
+﻿using Klei.HotLava;
 using Klei.HotLava.Cameras;
 using Klei.HotLava.Game;
 using Klei.HotLava.Gameplay;
@@ -18,9 +17,6 @@ namespace HotLavaStuff
 {
 	class Hack : MonoBehaviour
 	{
-		//[DllImport("kernel32.dll")]
-		//public static extern bool AllocConsole(int pid);
-
 		//UI
 		//Menu
 		public bool _menuVisible = true;
@@ -34,61 +30,46 @@ namespace HotLavaStuff
 		public static bool _freeRunTokenESP = false;
 		public static bool _collectiblesESP = false;
 
-		bool init = false;
+		private static float _origMaxBunnyHop = 0;
+		private static float _origPerfectBunnyHopBonusPerSecond = 0;
+
+		//public static float _updateTime = 3.0f;
+		//private static float _nextUpdateTime = 0;
+
+		private bool init = false;
 
 		public static List<FreeRunToken> _tokens;
 		public static List<CollectibleForLevel> _collectibles;
 
 		void Start()
 		{
-			FileLog.Reset();
-			FileLog.Log("Init Start\n");
-
+			StartCoroutine(RefreshCoroutine(3));
 			_tokens = new List<FreeRunToken>();
 			_collectibles = new List<CollectibleForLevel>();
-
-			try
-			{
-				HarmonyInstance harmony = HarmonyInstance.Create("exp.hotlavastuff");
-				harmony.PatchAll(Assembly.GetExecutingAssembly());
-			} catch (Exception e)
-			{
-				FileLog.Log($"Failed because: {e}");
-			}
-			
-
-			/*//Console
-			AllocConsole(-1);
-			var stdout = Console.OpenStandardOutput();
-			var sw = new System.IO.StreamWriter(stdout, Encoding.Default);
-			sw.AutoFlush = true;
-			Console.SetOut(sw);
-			Console.SetError(sw);*/
-
 			init = true;
-			FileLog.Log("Init Completed\n");
+		}
+
+		private IEnumerator<WaitForSeconds> RefreshCoroutine(int seconds)
+		{
+			do
+			{
+				yield return new WaitForSeconds(seconds);
+				Refresh();
+			} while (true);
 		}
 
 		void Update()
 		{
-			if (Input.GetKeyDown(KeyCode.F3))
-			{
-				//State.LocalPlayer.movementSettings.CurrentTargetSpeed += 1f;
-				State.LocalPlayer.movementSettings.MaxBunnyHop = 100;
-				State.LocalPlayer.movementSettings.PerfectBunnyHopBonusPerSecond = 100;
-			}
-			if (Input.GetKeyDown(KeyCode.F4))
-			{
-				GameScore.Current.m_Current = 0;
-			}
-
-			//Console.WriteLine("Update");
-			try
-			{ 
 			if (!init)
 			{
 				Start();
 			}
+
+			/*if (Time.time > _nextUpdateTime)
+			{
+				Refresh()
+				_nextUpdateTime = Time.time + _updateTime;
+			}*/
 
 			//Menu Toggle
 			if (Input.GetKeyDown(KeyCode.Insert))
@@ -97,18 +78,31 @@ namespace HotLavaStuff
 			//Stuff
 			if (Input.GetKeyDown(KeyCode.F1))
 			{
-				State.LocalPlayer.RigidBody.AddForce(Camera.main.transform.forward * 5);
+				if (_origMaxBunnyHop != -1 && _origPerfectBunnyHopBonusPerSecond != -1)
+				{
+					State.LocalPlayer.movementSettings.MaxBunnyHop = _origMaxBunnyHop;
+					State.LocalPlayer.movementSettings.PerfectBunnyHopBonusPerSecond = _origPerfectBunnyHopBonusPerSecond;
+				}
 			}
-
 			//TODO: this.m_PlayerController.movementSettings.ForwardSpeed
 			if (Input.GetKeyDown(KeyCode.F2))
 			{
 				Checkpoint.CommandSaveCheckpoint(State.LocalPlayer.transform.position, State.LocalPlayer.transform.rotation);
 			}
-			}
-			catch (Exception e)
+
+			if (Input.GetKeyDown(KeyCode.F3))
 			{
-				FileLog.Log($"Failed because: {e}");
+				if (_origMaxBunnyHop == -1 || _origPerfectBunnyHopBonusPerSecond == -1)
+				{
+					_origMaxBunnyHop = State.LocalPlayer.movementSettings.MaxBunnyHop;
+					_origPerfectBunnyHopBonusPerSecond = State.LocalPlayer.movementSettings.PerfectBunnyHopBonusPerSecond;
+				}
+				State.LocalPlayer.movementSettings.MaxBunnyHop = 100;
+				State.LocalPlayer.movementSettings.PerfectBunnyHopBonusPerSecond = 100;
+			}
+			if (Input.GetKeyDown(KeyCode.F4))
+			{
+				GameScore.Current.m_Current = 0;
 			}
 		}
 
@@ -124,9 +118,7 @@ namespace HotLavaStuff
 
 			
 			if (_freeRunTokenESP)
-			{
-				GUI.Label(new Rect(100, 100, 100, 100), _tokens.Count.ToString());
-
+			{ 
 				foreach (var token in _tokens)
 				{
 					if (token == null || token.gameObject == null) //|| !token.gameObject.activeSelf || !token.gameObject.activeInHierarchy)
@@ -147,7 +139,6 @@ namespace HotLavaStuff
 
 			if (_collectiblesESP)
 			{
-				GUI.Label(new Rect(100, 150, 100, 100), _collectibles.Count.ToString());
 				foreach (var collectible in _collectibles)
 				{
 					if (collectible == null || collectible.gameObject == null) //|| !collectible.gameObject.activeSelf || !collectible.gameObject.activeInHierarchy)
@@ -174,9 +165,11 @@ namespace HotLavaStuff
 			GUI.DragWindow(new Rect(0, 0, _menuRect.width, 20));
 
 			_freeRunTokenESP = GUI.Toggle(new Rect(10, 20, 200, 20), _freeRunTokenESP, "Card ESP");
-			GUI.Label(new Rect(100, 20, 200, 20), $"Left: {_tokens.Count.ToString()}");
+			if (_tokens != null)
+				GUI.Label(new Rect(150, 20, 200, 20), $"Left: {_tokens.Count.ToString()}");
 			_collectiblesESP = GUI.Toggle(new Rect(10, 40, 200, 20), _collectiblesESP, "Collectible ESP");
-			GUI.Label(new Rect(100, 40, 200, 20), $"Left: {_collectibles.Count.ToString()}");
+			if (_collectibles != null)
+				GUI.Label(new Rect(150, 40, 200, 20), $"Left: {_collectibles.Count.ToString()}");
 			_teleportMenuVisible = GUI.Toggle(new Rect(10, 60, 200, 20), _teleportMenuVisible, "Teleport Menu");
 			
 			
@@ -185,11 +178,22 @@ namespace HotLavaStuff
 				Singleton<LevelSingleton>.Instance.m_CharacterCanvas.m_LevelCompleteMenu.m_AwardsScreen.QueueDailyGiftCheck();
 			}
 
+			if (GUI.Button(new Rect(10, 100, _menuRect.width - 20, 20), "Refresh"))
+			{
+				Refresh();
+			}
+
 			//Unload
 			if (GUI.Button(new Rect(10, _menuRect.height - 25, _menuRect.width - 20, 20), "Unload"))
 			{
 				Class1.Unload();
 			}
+		}
+
+		void Refresh()
+		{
+			_tokens = FindObjectsOfType<FreeRunToken>().ToList();
+			_collectibles = FindObjectsOfType<CollectibleForLevel>().ToList();
 		}
 
 		void TeleportMenuFunction(int windowID)
@@ -209,33 +213,4 @@ namespace HotLavaStuff
 			GUI.EndScrollView();
 		}
 	}
-}
-
-namespace HotLavaStuff.HarmonyPatches
-{
-	#region HarmonyPatches
-	[HarmonyPatch(typeof(FreeRunToken), "OnEnable")]
-	public static class FreeRunTokenESP
-	{
-		static void Postfix(FreeRunToken __instance)
-		{
-			if (__instance == null)
-				return;
-
-			Hack._tokens.Add(__instance);
-		}
-	}
-
-	[HarmonyPatch(typeof(CollectibleForLevel), "OnEnable")]
-	public static class CollectibleESP
-	{
-		static void Postfix(CollectibleForLevel __instance)
-		{
-			if (__instance == null)
-				return;
-
-			Hack._collectibles.Add(__instance);
-		}
-	}
-	#endregion
 }

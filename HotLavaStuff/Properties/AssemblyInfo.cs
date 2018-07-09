@@ -17,10 +17,10 @@ using System.Runtime.InteropServices;
 // Durch Festlegen von ComVisible auf FALSE werden die Typen in dieser Assembly
 // für COM-Komponenten unsichtbar.  Wenn Sie auf einen Typ in dieser Assembly von
 // COM aus zugreifen müssen, sollten Sie das ComVisible-Attribut für diesen Typ auf "True" festlegen.
-[assembly: ComVisible(false)]
+//[assembly: ComVisible(false)]
 
 // Die folgende GUID bestimmt die ID der Typbibliothek, wenn dieses Projekt für COM verfügbar gemacht wird
-[assembly: Guid("ae567e52-d5bf-414f-bbcc-f3361c576423")]
+//[assembly: Guid("ae567e52-d5bf-414f-bbcc-f3361c576423")]
 
 // Versionsinformationen für eine Assembly bestehen aus den folgenden vier Werten:
 //
