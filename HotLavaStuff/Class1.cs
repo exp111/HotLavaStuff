@@ -20,7 +20,7 @@ namespace HotLavaStuff
 
 		public static void Unload()
 		{
-			UnityEngine.Object.Destroy(_loadObject);
+			GameObject.Destroy(_loadObject);
 		}
 	}
 }

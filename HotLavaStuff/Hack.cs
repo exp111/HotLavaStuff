@@ -73,8 +73,15 @@ namespace HotLavaStuff
 		{
 			if (Input.GetKeyDown(KeyCode.F3))
 			{
-				State.LocalPlayer.movementSettings.CurrentTargetSpeed += 1f;
+				//State.LocalPlayer.movementSettings.CurrentTargetSpeed += 1f;
+				State.LocalPlayer.movementSettings.MaxBunnyHop = 100;
+				State.LocalPlayer.movementSettings.PerfectBunnyHopBonusPerSecond = 100;
 			}
+			if (Input.GetKeyDown(KeyCode.F4))
+			{
+				GameScore.Current.m_Current = 0;
+			}
+
 			//Console.WriteLine("Update");
 			try
 			{ 
@@ -107,8 +114,6 @@ namespace HotLavaStuff
 
 		void OnGUI()
 		{
-			if (State.LocalPlayer != null && State.LocalPlayer.movementSettings != null)
-				GUI.Label(new Rect(200, 200, 200, 200), State.LocalPlayer.movementSettings.CurrentTargetSpeed.ToString());
 			if (_menuVisible)
 			{
 				_menuRect = GUI.Window(1337, _menuRect, MenuFunction, "Unity is shit");
@@ -169,7 +174,9 @@ namespace HotLavaStuff
 			GUI.DragWindow(new Rect(0, 0, _menuRect.width, 20));
 
 			_freeRunTokenESP = GUI.Toggle(new Rect(10, 20, 200, 20), _freeRunTokenESP, "Card ESP");
+			GUI.Label(new Rect(100, 20, 200, 20), $"Left: {_tokens.Count.ToString()}");
 			_collectiblesESP = GUI.Toggle(new Rect(10, 40, 200, 20), _collectiblesESP, "Collectible ESP");
+			GUI.Label(new Rect(100, 40, 200, 20), $"Left: {_collectibles.Count.ToString()}");
 			_teleportMenuVisible = GUI.Toggle(new Rect(10, 60, 200, 20), _teleportMenuVisible, "Teleport Menu");
 			
 			
